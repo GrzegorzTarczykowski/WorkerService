@@ -19,6 +19,7 @@ namespace WorkerService
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Worker>();
-                });
+                })
+                .UseWindowsService();
     }
 }
