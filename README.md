@@ -1,13 +1,13 @@
 # WorkerService
 
-Windows
+Windows:
 
 Install-Package Microsoft.Extensions.Hosting.WindowsServices
 
 UseWindowsService()
 
 
-Linux
+Linux:
 
 Microsoft.Extensions.Hosting.Systemd 
 
