@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NLog.Extensions.Logging;
 
 namespace WorkerService
 {
@@ -19,6 +20,10 @@ namespace WorkerService
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Worker>();
+                    services.AddLogging(loggingBuilder =>
+                    {
+                        loggingBuilder.AddNLog();
+                    });
                 })
                 .UseWindowsService();
     }

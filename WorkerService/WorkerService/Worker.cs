@@ -23,21 +23,24 @@ namespace WorkerService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            NameValueCollection props = new NameValueCollection
+            try
             {
-                { "quartz.serializer.type", "binary" }
-            };
+                _logger.LogInformation("Scheduler starting...");
+                await CreateJobs(await GetScheduler(stoppingToken), stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex.Message);
+            }
+        }
 
-            StdSchedulerFactory factory = new StdSchedulerFactory(props);
-
-            IScheduler sched = await factory.GetScheduler();
-            await sched.Start();
-
+        private async Task CreateJobs(IScheduler scheduler, CancellationToken stoppingToken)
+        {
             IJobDetail blinkJob = JobBuilder.Create<BlinkJob>()
-                .WithIdentity("BlinkJob", "FirstGroup")
-                .UsingJobData("Message", "Blink your eyes")
-                .UsingJobData("DateTimeNow", DateTime.Now.ToString())
-                .Build();
+                       .WithIdentity("BlinkJob", "FirstGroup")
+                       .UsingJobData("Message", "Blink your eyes")
+                       .UsingJobData("DateTimeNow", DateTime.Now.ToString())
+                       .Build();
 
             ITrigger triggerEvryFiveMinutes = TriggerBuilder.Create()
                 .WithIdentity("Trigger", "FirstGroup")
@@ -47,7 +50,7 @@ namespace WorkerService
                     .RepeatForever())
                 .Build();
 
-            await sched.ScheduleJob(blinkJob, triggerEvryFiveMinutes);
+            await scheduler.ScheduleJob(blinkJob, triggerEvryFiveMinutes, stoppingToken);
 
             IJobDetail goodMorningJob = JobBuilder.Create<GoodMorningJob>()
                 .WithIdentity("MorningJob", "FirstGroup")
@@ -60,7 +63,19 @@ namespace WorkerService
                 .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(9, 0))
                 .Build();
 
-            await sched.ScheduleJob(goodMorningJob, triggerDailyAtNine);
+            await scheduler.ScheduleJob(goodMorningJob, triggerDailyAtNine, stoppingToken);
+        }
+
+        private async Task<IScheduler> GetScheduler(CancellationToken stoppingToken)
+        {
+            StdSchedulerFactory factory = new StdSchedulerFactory(new NameValueCollection
+            {
+                { "quartz.serializer.type", "binary" }
+            });
+
+            var scheduler = await factory.GetScheduler();
+            await scheduler.Start(stoppingToken);
+            return scheduler;
         }
     }
 }
